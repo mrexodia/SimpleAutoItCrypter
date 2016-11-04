@@ -1,0 +1,3 @@
+LIBRARY "test1337"
+EXPORTS
+FindResourceExW=_FindResourceExW_hook@16
