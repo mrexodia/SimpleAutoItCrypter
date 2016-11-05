@@ -23,5 +23,8 @@
     <ClInclude Include="encrypt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hwbp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

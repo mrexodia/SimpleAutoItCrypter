@@ -1,5 +1,42 @@
 #include <windows.h>
 #include "encrypt.h"
+#include "hwbp.h"
+
+static ULONG_PTR hwidAddr = 0;
+static wchar_t tempPath[MAX_PATH] = L"";
+
+static LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo)
+{
+    static bool bRestoreHardwareBreakpoint = false;
+    static ULONG_PTR dr7backup = 0;
+    DWORD ExceptionCode = ExceptionInfo->ExceptionRecord->ExceptionCode;
+    if(ExceptionCode == DBG_PRINTEXCEPTION_C)
+        return EXCEPTION_CONTINUE_SEARCH;
+    if(ExceptionCode == EXCEPTION_SINGLE_STEP)
+    {
+        if(bRestoreHardwareBreakpoint)
+        {
+            bRestoreHardwareBreakpoint = false;
+            ExceptionInfo->ContextRecord->Dr7 = dr7backup;
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+        if(ULONG_PTR(ExceptionInfo->ExceptionRecord->ExceptionAddress) == hwidAddr)
+        {
+            auto arg = *(wchar_t**)(ExceptionInfo->ContextRecord->Esp + 4);
+            if(wcsstr(arg, tempPath))
+                *arg = L'\0';
+            else
+            {
+                dr7backup = ExceptionInfo->ContextRecord->Dr7;
+                ExceptionInfo->ContextRecord->Dr7 = 0;
+                bRestoreHardwareBreakpoint = true;
+                ExceptionInfo->ContextRecord->EFlags |= 0x100; //TRAP_FLAG
+            }
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
 
 extern "C"
 _Ret_maybenull_
@@ -40,6 +77,11 @@ BOOL WINAPI DllMain(
         while(*lol != frex)
             lol++;
         *lol = FindResourceExW_hook;
+
+        GetTempPathW(MAX_PATH, tempPath);
+        AddVectoredExceptionHandler(1, VectoredHandler);
+        hwidAddr = ULONG_PTR(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryW"));
+        hwbpSet(GetCurrentThread(), hwidAddr, 0, TYPE_EXECUTE, SIZE_1);
     }
     return TRUE;
 }
