@@ -1,4 +1,4 @@
-# test1337
+# SimpleAutoItCrypter
 
 Simple AutoIt crypter
 
