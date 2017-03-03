@@ -4,6 +4,7 @@
 
 static ULONG_PTR hwidAddr = 0;
 static wchar_t tempPath[MAX_PATH] = L"";
+static int tempPathLen;
 
 static LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo)
 {
@@ -23,7 +24,7 @@ static LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo)
         if(ULONG_PTR(ExceptionInfo->ExceptionRecord->ExceptionAddress) == hwidAddr)
         {
             auto arg = *(wchar_t**)(ExceptionInfo->ContextRecord->Esp + 4);
-            if(wcsstr(arg, tempPath))
+            if(!memcmp(arg, tempPath, tempPathLen * sizeof(wchar_t)))
                 *arg = L'\0';
             else
             {
@@ -51,7 +52,7 @@ _In_ WORD wLanguage
 {
     static auto decrypted = false;
     auto hResInfo = FindResourceExW(hModule, lpType, lpName, wLanguage);
-    if(!wcscmp(lpName, L"SCRIPT") && !decrypted)
+    if(!memcmp(lpName, L"SCRIPT", sizeof(L"SCRIPT")) && !decrypted)
     {
         decrypted = true;
         auto size = SizeofResource(hModule, hResInfo);
@@ -78,7 +79,7 @@ BOOL WINAPI DllMain(
             lol++;
         *lol = FindResourceExW_hook;
 
-        GetTempPathW(MAX_PATH, tempPath);
+        tempPathLen = GetTempPathW(MAX_PATH, tempPath);
         AddVectoredExceptionHandler(1, VectoredHandler);
         hwidAddr = ULONG_PTR(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryW"));
         hwbpSet(GetCurrentThread(), hwidAddr, 0, TYPE_EXECUTE, SIZE_1);

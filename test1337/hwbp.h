@@ -167,7 +167,6 @@ inline bool hwbpSet(HANDLE hThread, ULONG_PTR hwbpAddr, int hwbpIndex, HWBP_TYPE
     }
 
     CONTEXT DBGContext;
-    memset(&DBGContext, 0, sizeof(CONTEXT));
     DBGContext.ContextFlags = CONTEXT_DEBUG_REGISTERS;
 
     if(!GetThreadContext(hThread, &DBGContext))
@@ -208,7 +207,6 @@ inline bool hwbpSet(HANDLE hThread, ULONG_PTR hwbpAddr, int hwbpIndex, HWBP_TYPE
 inline bool hwbpDel(HANDLE hThread, int hwbpIndex)
 {
     CONTEXT DBGContext;
-    memset(&DBGContext, 0, sizeof(CONTEXT));
     DBGContext.ContextFlags = CONTEXT_DEBUG_REGISTERS;
 
     if(!GetThreadContext(hThread, &DBGContext))
