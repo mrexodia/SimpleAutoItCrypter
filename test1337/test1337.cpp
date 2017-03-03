@@ -2,6 +2,31 @@
 #include "encrypt.h"
 #include "hwbp.h"
 
+//#pragma comment(linker, "/export:EmptyWorkingSet=PSAPI.EmptyWorkingSet")
+//#pragma comment(linker, "/export:EnumDeviceDrivers=PSAPI.EnumDeviceDrivers")
+//#pragma comment(linker, "/export:EnumPageFilesA=PSAPI.EnumPageFilesA")
+//#pragma comment(linker, "/export:EnumPageFilesW=PSAPI.EnumPageFilesW")
+//#pragma comment(linker, "/export:EnumProcesses=PSAPI.EnumProcesses")
+//#pragma comment(linker, "/export:EnumProcessModules=PSAPI.EnumProcessModules")
+//#pragma comment(linker, "/export:GetDeviceDriverBaseNameA=PSAPI.GetDeviceDriverBaseNameA")
+//#pragma comment(linker, "/export:GetDeviceDriverBaseNameW=PSAPI.GetDeviceDriverBaseNameW")
+//#pragma comment(linker, "/export:GetDeviceDriverFileNameA=PSAPI.GetDeviceDriverFileNameA")
+//#pragma comment(linker, "/export:GetDeviceDriverFileNameW=PSAPI.GetDeviceDriverFileNameW")
+//#pragma comment(linker, "/export:GetMappedFileNameA=PSAPI.GetMappedFileNameA")
+//#pragma comment(linker, "/export:GetMappedFileNameW=PSAPI.GetMappedFileNameW")
+//#pragma comment(linker, "/export:GetModuleBaseNameA=PSAPI.GetModuleBaseNameA")
+//#pragma comment(linker, "/export:GetModuleBaseNameW=PSAPI.GetModuleBaseNameW")
+//#pragma comment(linker, "/export:GetModuleFileNameExA=PSAPI.GetModuleFileNameExA")
+//#pragma comment(linker, "/export:GetModuleFileNameExW=PSAPI.GetModuleFileNameExW")
+//#pragma comment(linker, "/export:GetModuleInformation=PSAPI.GetModuleInformation")
+//#pragma comment(linker, "/export:GetPerformanceInfo=PSAPI.GetPerformanceInfo")
+//#pragma comment(linker, "/export:GetProcessImageFileNameA=PSAPI.GetProcessImageFileNameA")
+//#pragma comment(linker, "/export:GetProcessImageFileNameW=PSAPI.GetProcessImageFileNameW")
+#pragma comment(linker, "/export:GetProcessMemoryInfo=PSAPI.GetProcessMemoryInfo")
+//#pragma comment(linker, "/export:GetWsChanges=PSAPI.GetWsChanges")
+//#pragma comment(linker, "/export:InitializeProcessForWsWatch=PSAPI.InitializeProcessForWsWatch")
+//#pragma comment(linker, "/export:QueryWorkingSet=PSAPI.QueryWorkingSet")
+
 static ULONG_PTR hwidAddr = 0;
 static wchar_t tempPath[MAX_PATH] = L"";
 static int tempPathLen;
@@ -77,7 +102,11 @@ BOOL WINAPI DllMain(
         auto lol = (void**)GetModuleHandleW(nullptr);
         while(*lol != frex)
             lol++;
+
+        DWORD old;
+        VirtualProtect(lol, sizeof(void*), PAGE_READWRITE, &old);
         *lol = FindResourceExW_hook;
+        VirtualProtect(lol, sizeof(void*), old, &old);
 
         tempPathLen = GetTempPathW(MAX_PATH, tempPath);
         AddVectoredExceptionHandler(1, VectoredHandler);
