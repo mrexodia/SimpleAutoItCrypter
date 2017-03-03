@@ -31,6 +31,14 @@ static ULONG_PTR hwidAddr = 0;
 static wchar_t tempPath[MAX_PATH] = L"";
 static int tempPathLen;
 
+static bool match(const wchar_t* a, const wchar_t* b, size_t s)
+{
+    for(size_t i = 0; i < s; i++)
+        if(a[i] != b[i])
+            return false;
+    return true;
+}
+
 static LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo)
 {
     static bool bRestoreHardwareBreakpoint = false;
@@ -48,8 +56,12 @@ static LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo)
         }
         if(ULONG_PTR(ExceptionInfo->ExceptionRecord->ExceptionAddress) == hwidAddr)
         {
+#ifdef _WIN64
+            auto arg = (wchar_t*)ExceptionInfo->ContextRecord->Rcx;
+#else
             auto arg = *(wchar_t**)(ExceptionInfo->ContextRecord->Esp + 4);
-            if(!memcmp(arg, tempPath, tempPathLen * sizeof(wchar_t)))
+#endif //_WIN64
+            if(match(arg, tempPath, tempPathLen))
                 *arg = L'\0';
             else
             {
